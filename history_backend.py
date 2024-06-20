@@ -1,29 +1,36 @@
 from flask import Flask, request, jsonify
-import os
+import mysql.connector
 
 app = Flask(__name__)
 
-HISTORY_DIR = 'history'
-os.makedirs(HISTORY_DIR, exist_ok=True)
+# MySQL database connection
+db = mysql.connector.connect(
+    host="sql12.freesqldatabase.com",
+    user="sql12714674",
+    password="15cCYtDhUC",
+    database="sql12714674"
+)
+cursor = db.cursor()
 
-@app.route('/history/<history_type>', methods=['GET'])
-def get_history(history_type):
-    history_file = os.path.join(HISTORY_DIR, f"{history_type}.txt")
-    if os.path.exists(history_file):
-        with open(history_file, 'r') as f:
-            history = f.read()
-        return history
-    else:
-        return 'No history found for this type', 404
+@app.route('/report', methods=['POST'])
+def submit_report():
+    try:
+        spam_emails = request.form['spam_emails']
+        spam_sms = request.form['spam_sms']
+        spam_calls = request.form['spam_calls']
+        malicious_urls = request.form['malicious_urls']
+        phishing_urls = request.form['phishing_urls']
+        illicit_video_urls = request.form['illicit_video_urls']
 
-@app.route('/history/<history_type>', methods=['DELETE'])
-def delete_history(history_type):
-    history_file = os.path.join(HISTORY_DIR, f"{history_type}.txt")
-    if os.path.exists(history_file):
-        os.remove(history_file)
-        return 'History deleted successfully'
-    else:
-        return 'No history found for this type', 404
+        query = "INSERT INTO reports (spam_emails, spam_sms, spam_calls, malicious_urls, phishing_urls, illicit_video_urls) VALUES (%s, %s, %s, %s, %s, %s)"
+        values = (spam_emails, spam_sms, spam_calls, malicious_urls, phishing_urls, illicit_video_urls)
+        cursor.execute(query, values)
+        db.commit()
+
+        return 'Report submitted successfully'
+    except Exception as e:
+        # Return the error message as a JSON response
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10004, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=True)
