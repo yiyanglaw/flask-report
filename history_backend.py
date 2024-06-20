@@ -1,36 +1,22 @@
+**Updated Backend File**
+
+`report_backend.py`
+
+```python
 from flask import Flask, request, jsonify
 import mysql.connector
-from tenacity import retry, wait_exponential, stop_after_attempt
 from datetime import datetime
 
 app = Flask(__name__)
 
 # MySQL database connection
-def connect_db():
-    return mysql.connector.connect(
-        host="sql12.freesqldatabase.com",
-        user="sql12714674",
-        password="15cCYtDhUC",
-        database="sql12714674"
-    )
-
-@retry(wait=wait_exponential(multiplier=1, min=1, max=60), stop=stop_after_attempt(5))
-def execute_query(query, values=None):
-    db = connect_db()
-    cursor = db.cursor()
-    try:
-        if values is None:
-            cursor.execute(query)
-        else:
-            cursor.execute(query, values)
-        db.commit()
-        return cursor
-    except mysql.connector.Error as e:
-        db.rollback()
-        raise e
-    finally:
-        cursor.close()
-        db.close()
+db = mysql.connector.connect(
+    host="sql12.freesqldatabase.com",
+    user="sql12714674",
+    password="15cCYtDhUC",
+    database="sql12714674"
+)
+cursor = db.cursor()
 
 @app.route('/report', methods=['POST'])
 def submit_report():
@@ -53,8 +39,9 @@ def submit_report():
 @app.route('/reports/<report_type>', methods=['GET'])
 def get_reports(report_type):
     query = f"SELECT {report_type}, created_at FROM reports WHERE {report_type} IS NOT NULL AND {report_type} != ''"
-    cursor = execute_query(query)
+    cursor.execute(query)
     reports = cursor.fetchall()
+
     reports_list = []
     for report in reports:
         report_data = {
@@ -62,6 +49,7 @@ def get_reports(report_type):
             'created_at': report[1].strftime("%Y-%m-%d %H:%M:%S")
         }
         reports_list.append(report_data)
+
     return jsonify(reports_list)
 
 if __name__ == '__main__':
