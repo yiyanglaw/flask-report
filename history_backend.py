@@ -1,18 +1,35 @@
-
 from flask import Flask, request, jsonify
 import mysql.connector
-from datetime import datetime
+from tenacity import retry, wait_exponential, stop_after_attempt
 
 app = Flask(__name__)
 
 # MySQL database connection
-db = mysql.connector.connect(
-    host="sql12.freesqldatabase.com",
-    user="sql12714674",
-    password="15cCYtDhUC",
-    database="sql12714674"
-)
-cursor = db.cursor()
+def connect_db():
+    return mysql.connector.connect(
+        host="sql12.freesqldatabase.com",
+        user="sql12714674",
+        password="15cCYtDhUC",
+        database="sql12714674"
+    )
+
+@retry(wait=wait_exponential(multiplier=1, min=1, max=60), stop=stop_after_attempt(5))
+def execute_query(query, values=None):
+    db = connect_db()
+    cursor = db.cursor()
+    try:
+        if values is None:
+            cursor.execute(query)
+        else:
+            cursor.execute(query, values)
+        db.commit()
+        return cursor
+    except mysql.connector.Error as e:
+        db.rollback()
+        raise e
+    finally:
+        cursor.close()
+        db.close()
 
 @app.route('/report', methods=['POST'])
 def submit_report():
