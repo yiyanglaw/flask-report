@@ -5,3 +5,4 @@ scikit-learn>=1.2.1
 numpy
 Cython>=0.29.24
 mysql.connector
+tenacity
