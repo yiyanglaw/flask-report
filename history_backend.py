@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import mysql.connector
 from tenacity import retry, wait_exponential, stop_after_attempt
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -52,9 +53,8 @@ def submit_report():
 @app.route('/reports/<report_type>', methods=['GET'])
 def get_reports(report_type):
     query = f"SELECT {report_type}, created_at FROM reports WHERE {report_type} IS NOT NULL AND {report_type} != ''"
-    cursor.execute(query)
+    cursor = execute_query(query)
     reports = cursor.fetchall()
-
     reports_list = []
     for report in reports:
         report_data = {
@@ -62,7 +62,6 @@ def get_reports(report_type):
             'created_at': report[1].strftime("%Y-%m-%d %H:%M:%S")
         }
         reports_list.append(report_data)
-
     return jsonify(reports_list)
 
 if __name__ == '__main__':
