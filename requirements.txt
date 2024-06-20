@@ -6,3 +6,4 @@ numpy
 Cython>=0.29.24
 mysql.connector
 tenacity
+datetime
